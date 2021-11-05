@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Product;
+use GuzzleHttp\Client;
 use Illuminate\Http\Request;
 
 class ProductController extends Controller
@@ -15,6 +16,7 @@ class ProductController extends Controller
     public function index()
     {
         //
+        return Product::all();
     }
 
     /**
@@ -35,7 +37,20 @@ class ProductController extends Controller
      */
     public function store(Request $request)
     {
-        //
+        // Guzzle fetches product data from the given url.
+        $client = $this->client = new Client(['verify' => false ]);
+        $apiProducts = $client->request('get','https://pf.tradetracker.net/?aid=164922&encoding=utf-8&type=json&fid=1176722&categoryType=2&additionalType=2');
+
+        // Filters out certain specifications for every product in the data collection and saves them.
+        foreach(json_decode($apiProducts->getBody()) as $productApi){
+            $product = new Product;
+            $product->name = $productApi->name;
+            $product->description = $productApi->description;
+            $product->price = $productApi->price->amount;
+            $product->image = $productApi->images[0];
+            $product->url = $productApi->URL;
+            $product->save();
+        }
     }
 
     /**
