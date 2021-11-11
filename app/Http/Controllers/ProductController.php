@@ -37,14 +37,14 @@ class ProductController extends Controller
      */
     public function store(Request $request)
     {
-        // Guzzle fetches product data from the given url.
+        // Guzzle fetches data from the given url.
         $client = $this->client = new Client(['verify' => false]);
         $productApi = $client->request('get', 'https://pf.tradetracker.net/?aid=164922&encoding=utf-8&type=json&fid=1176722&categoryType=2&additionalType=2');
         $apiProducts = json_decode($productApi->getBody(), true);
 
         $count = 0;
 
-        // Creates a Product every object fetched.
+        // Creates a database record for every fetched object from JSON array 'products'.
         foreach ($apiProducts['products'] as $product) {
             Product::create([
                 'name' => $product['name'],
@@ -54,7 +54,7 @@ class ProductController extends Controller
                 'url' => $product['URL']
             ]);
 
-            // Limits amount of fetch to 100 objects.
+            // Limits amount of fetched objects to 100.
             if ($count > 100) {
                 break;
             }
