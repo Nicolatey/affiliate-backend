@@ -38,18 +38,27 @@ class ProductController extends Controller
     public function store(Request $request)
     {
         // Guzzle fetches product data from the given url.
-        $client = $this->client = new Client(['verify' => false ]);
-        $apiProducts = $client->request('get','https://pf.tradetracker.net/?aid=164922&encoding=utf-8&type=json&fid=1176722&categoryType=2&additionalType=2');
+        $client = $this->client = new Client(['verify' => false]);
+        $productApi = $client->request('get', 'https://pf.tradetracker.net/?aid=164922&encoding=utf-8&type=json&fid=1176722&categoryType=2&additionalType=2');
+        $apiProducts = json_decode($productApi->getBody(), true);
 
-        // Filters out certain specifications for every product in the data collection and saves them.
-        foreach(json_decode($apiProducts->getBody()) as $productApi){
-            $product = new Product;
-            $product->name = $productApi->name;
-            $product->description = $productApi->description;
-            $product->price = $productApi->price->amount;
-            $product->image = $productApi->images[0];
-            $product->url = $productApi->URL;
-            $product->save();
+        $count = 0;
+
+        // Creates a Product every object fetched.
+        foreach ($apiProducts['products'] as $product) {
+            Product::create([
+                'name' => $product['name'],
+                'description' => $product['description'],
+                'price' => $product['price']['amount'],
+                'image' => $product['images'][0],
+                'url' => $product['URL']
+            ]);
+
+            // Limits amount of fetch to 100 objects.
+            if ($count > 100) {
+                break;
+            }
+            $count++;
         }
     }
 
